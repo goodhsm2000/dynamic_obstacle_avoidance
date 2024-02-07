@@ -1,0 +1,13 @@
+<launch>
+
+    <param name = "use_cpu" value = "true"/> 
+
+    <!-- Main Node -->
+    <node name="main_node" pkg="object_tracking" type="main.py" output="screen">
+    </node>
+
+    <!-- Trajectory Visualizer Node -->
+    <node name="trajectory_visualizer" pkg="object_tracking" type="trajectory_visualizer_node.py" output="screen">
+    </node>
+
+</launch>
