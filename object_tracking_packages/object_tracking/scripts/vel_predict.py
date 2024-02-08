@@ -87,10 +87,36 @@ class VelKalman:
     def gety(self):
         return float(self.state[1][0])
     
-    def predict_path(self, t):
+    def getr(self):
+        return math.sqrt(math.pow(self.state[0][0], 2) + math.pow(self.state[1][0], 2))
+    
+    # def predict_path(self, t):
 
-        x = self.state[0][0]
-        y = self.state[1][0]
+    #     x = self.state[0][0]
+    #     y = self.state[1][0]
+    #     vx = self.state[2][0]
+    #     vy = self.state[3][0]
+
+    #     dt = 0.1
+
+    #     if self.calvel() < 0.05:
+    #         vx = 0
+    #         vy = 0
+            
+    #     path_list = []
+        
+    #     for step in range(t):
+    #         ps = Point()
+    #         ps.x = x + vx * dt * step
+    #         ps.y = y + vy * dt * step
+    #         path_list.append(ps)
+
+    #     return path_list
+
+    def predict_path(self, t, world_x, world_y):
+
+        x = world_x
+        y = world_y
         vx = self.state[2][0]
         vy = self.state[3][0]
 
@@ -109,3 +135,4 @@ class VelKalman:
             path_list.append(ps)
 
         return path_list
+

@@ -11,7 +11,9 @@ import pyrealsense2 as rs
 import time
 import math
 from vel_predict import VelKalman
+import tf.transformations as tf
 
+RAD2DEG = 180 / math.pi
 class ObjectTracker:
     def __init__(self, model_path,publisher):
         # self.model = YOLO(model_path).cuda()
@@ -33,7 +35,7 @@ class ObjectTracker:
         # 모델을 최적화하여 추론 시간을 단축
         self.model.fuse()
 
-    def update_tracker(self, frame, detections):
+    def update_tracker(self, frame, detections, pose):
         # Convert YOLO detections to the format expected by ByteTrack
         formatted_detections = self.format_detections_for_byte_track(detections)
 
@@ -47,6 +49,15 @@ class ObjectTracker:
 
         formatted_tracked_objects = []
         current_tracked_id = []
+        orientation = pose.pose.orientation
+        pose = pose.pose.position
+        quaternion = [orientation.x, orientation.y, orientation.z, orientation.w]
+
+        # 현재 로봇이 바라보고 있는 각을 계산
+        _, _, yaw = tf.euler_from_quaternion(quaternion)
+
+        print("현재 로봇의 yaw 값: ", yaw * RAD2DEG)
+    
 
         for obj in tracked_objects:
             bbox_array, _, confidence, class_id, obj_id = obj
@@ -105,16 +116,34 @@ class ObjectTracker:
                 # trajectory_msg.trajectory_points = Point(x=last_point[0], y=last_point[1], z=last_point[2])
                 trajectory_msg.trajectory_points = Point(x=self.kalman_list[obj_id].getx(), y=self.kalman_list[obj_id].gety(), z=0.0)
                 trajectory_msg.cur_tracked_id = current_tracked_id     
-                  
-                path_msg.path_list = self.kalman_list[obj_id].predict_path(20)
-                print("{}의 초기 x 값: {}, y 값: {}".format(obj_id, path_msg.path_list[0].x, path_msg.path_list[0].y))
+                
+                obj_x = self.kalman_list[obj_id].getx()
+                obj_y = self.kalman_list[obj_id].gety()
+
+                # 카메라 좌표계에서의 물체 각도 계산
+                obj_yaw = math.atan2(obj_y, obj_x)
+
+                print(obj_id, "의 카메라 기준 각도: ", obj_yaw * RAD2DEG)
+                
+                # world 좌표계에서의 물체 각도 계산
+                world_yaw = yaw + obj_yaw
+
+                print(obj_id, "의 world 기준 각도: ", world_yaw * RAD2DEG)
+                
+                world_x = pose.x + self.kalman_list[obj_id].getr() * math.cos(world_yaw)
+                world_y = pose.y + self.kalman_list[obj_id].getr() * math.sin(world_yaw)
+
+                print("{}의 world x 값: {}, y 값: {}".format(obj_id, world_x, world_y))
+
+                path_msg.path_list = self.kalman_list[obj_id].predict_path(20, world_x, world_y)
+                # print("{}의 초기 x 값: {}, y 값: {}".format(obj_id, path_msg.path_list[0].x, path_msg.path_list[0].y))
 
                 vel = self.kalman_list[obj_id].calvel()
                 print("{}의 추정 속도: {}".format(obj_id, round(vel,3)))
                 trajectory_msg.paths.append(path_msg)
 
 
-        print(len(trajectory_msg.paths))
+        # print(len(trajectory_msg.paths))
         self.publisher.publish(trajectory_msg)
 
         return frame, formatted_tracked_objects
@@ -271,7 +300,7 @@ class ObjectTracker:
         # 이미지 픽셀 좌표를 3D 공간에서의 좌표로 변경(x, y 좌표, z 깊이)
         x,y,z = rs.rs2_deproject_pixel_to_point(intrinsics,[cX,cY],depth_value)
         # print(x,y,z)
-        print(x/1000,y/1000,z/1000)
+        # print(x/1000,y/1000,z/1000)
         return x/1000,y/1000,z/1000
 
 
@@ -290,3 +319,4 @@ class ObjectTracker:
         byte_track_detections.class_id = np.array(class_ids, dtype=int)
 
         return byte_track_detections
+

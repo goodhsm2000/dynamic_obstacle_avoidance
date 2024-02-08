@@ -7,7 +7,8 @@ from cv_bridge import CvBridge
 from sensor_msgs.msg import Image, CameraInfo
 from object_tracking_msgs.msg import Trajectory
 from geometry_msgs.msg import Point
-from nav_msgs.msg import Path
+from nav_msgs.msg import Path, Odometry
+import tf.transformations as tf
 
 class MainNode:
     def __init__(self):
@@ -15,6 +16,7 @@ class MainNode:
         rospy.Subscriber('/camera/color/image_raw',Image,self.rgb_callback)
         rospy.Subscriber('/camera/depth/image_rect_raw',Image,self.depth_callback)
         rospy.Subscriber( '/camera/color/camera_info', CameraInfo,self.camera_info_callback)
+        rospy.Subscriber('/odom', Odometry, self.odom_callback)
 
         # 리얼센스 카메라가 아닌 웹캡으로 실험하기 위한 subscriber
         # rospy.Subscriber("/camera1/usb_cam1/image_raw", Image, self.rgb_callback)
@@ -27,6 +29,7 @@ class MainNode:
         self.camera_intrinsics = None
         self.frame = None
         self.track_id = 1
+        self.pose = None
 
     def rgb_callback(self, msg):
         frame = self.bridge.imgmsg_to_cv2(msg, "bgr8")
@@ -38,6 +41,9 @@ class MainNode:
 
     def camera_info_callback(self, camera_info_msg):
         self.camera_intrinsics = camera_info_msg
+
+    def odom_callback(self, msg):
+        self.pose = msg.pose
 
     def process_frame(self, frame, depth_image):
 
@@ -60,7 +66,7 @@ class MainNode:
 
             # 검출된 결과를 바탕으로 bytetrack으로 검출 결과를 update하고 입력 이미지에 annotation 결과 표시(frame_with_detections), 
             # tracking 할 정보가 담긴 값 반환(tracked_objects) [x1, y1, x2, y2, obj_id] 형태
-            frame_with_detections, tracked_objects = self.tracker.update_tracker(frame, boxes_with_scores_classes)
+            frame_with_detections, tracked_objects = self.tracker.update_tracker(frame, boxes_with_scores_classes, self.pose)
 
             # Distance extraction and trajectory updating
             self.tracker.trajectories = self.tracker.add_to_trajectory(self.tracker.trajectories, tracked_objects, depths)
@@ -86,5 +92,3 @@ def main(args=None):
 
 if __name__ == "__main__":
     main()
-
-
