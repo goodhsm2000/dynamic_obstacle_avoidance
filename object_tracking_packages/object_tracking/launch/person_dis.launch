@@ -1,0 +1,9 @@
+<launch>
+
+    <param name = "use_cpu" value = "true"/> 
+
+    <!-- Main Node -->
+    <node name="main_node" pkg="object_tracking" type="person_detect_dis.py" output="screen">
+    </node>
+    
+</launch>

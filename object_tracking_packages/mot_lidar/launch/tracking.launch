@@ -1,0 +1,13 @@
+<launch>
+
+    <param name = "use_cpu" value = "true"/> 
+
+    <!-- Main Node -->
+    <node name="main_node" pkg="mot_lidar" type="main.py" output="screen">
+    </node>
+
+    <!-- Trajectory Visualizer Node -->
+    <node name="trajectory_visualizer" pkg="mot_lidar" type="trajectory_visualizer_node.py" output="screen">
+    </node>
+
+</launch>

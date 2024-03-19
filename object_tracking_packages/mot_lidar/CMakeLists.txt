@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(object_tracking)
+project(mot_lidar)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -12,7 +12,6 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   sensor_msgs
   object_tracking_msgs
-  yolov8_ros_msgs
 )
 
 ## System dependencies are found with CMake's conventions

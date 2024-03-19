@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>object_tracking</name>
+  <name>mot_lidar</name>
   <version>0.0.0</version>
   <description>The object_tracking package</description>
 
@@ -60,7 +60,6 @@
   <exec_depend>sensor_msgs</exec_depend>
 
   <depend>object_tracking_msgs</depend>
-  <depend>yolov8_ros_msgs</depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->
